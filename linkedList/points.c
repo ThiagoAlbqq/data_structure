@@ -11,6 +11,7 @@ typedef struct linkedList
 {
     point *head;
     point *tail;
+    int tam;
 } linkedList;
 
 point *create_point(int x, int y);
@@ -21,11 +22,11 @@ void free_list(linkedList *list);
 
 int main()
 {
-    linkedList points = {NULL, NULL};
+    linkedList points = {NULL, NULL, 0};
     append_list(&points, 1, 2);
     append_list(&points, 3, 2);
     append_list(&points, 4, 7);
-    insert(&points, 1, 5, 0);
+    insert(&points, 10, 5, 0);
     print_list(&points);
     free_list(&points);
     return 0;
@@ -60,31 +61,38 @@ point *append_list(linkedList *list, int x, int y)
         list->tail = p;
     }
 
+    list->tam += 1;
     return p;
 }
 
 point *insert(linkedList *list, int index, int x, int y)
 {
+
+    if (index < 0 || index > list->tam)
+    {
+        printf("Invalid Index\n");
+        return NULL;
+    }
+
     point *p = create_point(x, y);
     if (index == 0)
     {
         p->next = list->head;
         list->head = p;
+        if (list->tam == 0)
+            list->tail = p;
+    }
+    else if (index == list->tam)
+    {
+        list->tail->next = p;
+        list->tail = p;
     }
     else
     {
         point *current = list->head;
         int i = 0;
-        while (current->next != NULL && i < index - 1)
-        {
+        for (int i = 0; i < index - 1; i++)
             current = current->next;
-            i++;
-        }
-        if (current == NULL)
-        {
-            free(p);
-            return p;
-        }
 
         p->next = current->next;
         current->next = p;
@@ -92,6 +100,7 @@ point *insert(linkedList *list, int index, int x, int y)
         if (p->next == NULL)
             list->tail = p;
     }
+    list->tam += 1;
     return p;
 }
 
@@ -116,4 +125,5 @@ void free_list(linkedList *list)
     }
     list->head = NULL;
     list->tail = NULL;
+    list->tam = 0;
 }
