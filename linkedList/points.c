@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define ALLOW_OVERFLOW 1
+#define STRICT_MODE 0
 
 typedef struct point
 {
@@ -16,17 +20,44 @@ typedef struct linkedList
 
 point *create_point(int x, int y);
 point *append_list(linkedList *list, int x, int y);
-point *insert(linkedList *list, int index, int x, int y);
+point *insert(linkedList *list, int index, int x, int y, int mode);
 void print_list(const linkedList *list);
 void free_list(linkedList *list);
 
-int main()
+int main(int argc, char *argv[])
 {
     linkedList points = {NULL, NULL, 0};
+
+    int mode = STRICT_MODE;
+
+    if (argc > 1 && strcmp(argv[1], "PERMISSIVE") == 0)
+    {
+        mode = ALLOW_OVERFLOW;
+    }
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-p") == 0)
+        {
+            mode = ALLOW_OVERFLOW;
+        }
+        else if (strcmp(argv[i], "-s") == 0)
+        {
+            mode = STRICT_MODE;
+        }
+        else
+        {
+            fprintf(stderr, "Uso: %s [-p | -s]\n", argv[0]);
+            fprintf(stderr, "  -p : modo permissivo\n");
+            fprintf(stderr, "  -s : modo estrito (padrão)\n");
+            return 1;
+        }
+    }
+
     append_list(&points, 1, 2);
     append_list(&points, 3, 2);
     append_list(&points, 4, 7);
-    insert(&points, 10, 5, 0);
+    insert(&points, 10, 5, 0, mode);
     print_list(&points);
     free_list(&points);
     return 0;
@@ -65,13 +96,18 @@ point *append_list(linkedList *list, int x, int y)
     return p;
 }
 
-point *insert(linkedList *list, int index, int x, int y)
+point *insert(linkedList *list, int index, int x, int y, int flag)
 {
 
-    if (index < 0 || index > list->tam)
+    if (index < 0 || (index > list->tam && flag == STRICT_MODE))
     {
         printf("Invalid Index\n");
         return NULL;
+    }
+
+    if (index > list->tam)
+    {
+        return append_list(list, x, y);
     }
 
     point *p = create_point(x, y);
@@ -90,15 +126,11 @@ point *insert(linkedList *list, int index, int x, int y)
     else
     {
         point *current = list->head;
-        int i = 0;
         for (int i = 0; i < index - 1; i++)
             current = current->next;
 
         p->next = current->next;
         current->next = p;
-
-        if (p->next == NULL)
-            list->tail = p;
     }
     list->tam += 1;
     return p;
