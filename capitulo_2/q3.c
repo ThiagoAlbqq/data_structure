@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h> // Para usar malloc e free
+#include <stdlib.h>
 
 typedef struct NO
 {
@@ -19,12 +19,7 @@ void reverse_print(NO *node)
 
 NO *constructor(int value, NO *prox)
 {
-    NO *p = (NO *)malloc(sizeof(NO)); // Aloca memória dinamicamente
-    if (p == NULL)
-    {
-        fprintf(stderr, "Falha na alocação de memória\n");
-        exit(1);
-    }
+    NO *p = (NO *)malloc(sizeof(NO));
     p->value = value;
     p->prox = prox;
     return p;
@@ -51,7 +46,6 @@ int main()
 
     reverse_print(p5);
 
-    // Libera a memória alocada
     free_list(p5);
 
     return 0;

@@ -18,10 +18,10 @@ int find(No *header);
 
 int main()
 {
-    add_node(10, 0);
-    add_node(10, 0);
-    // add_node(30, 1);
-    // add_node(40, 3);
+    add_node(20, 0);
+    add_node(10, 1);
+    add_node(15, 2);
+    add_node(50, 2);
 
     int search = find(header);
 

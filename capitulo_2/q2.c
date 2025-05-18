@@ -23,11 +23,6 @@ float q2(NO *aux)
 NO *constructor(int value, NO *prox)
 {
     NO *p = (NO *)malloc(sizeof(NO));
-    if (p == NULL)
-    {
-        fprintf(stderr, "Falha na alocação de memória\n");
-        exit(1);
-    }
     p->value = value;
     p->prox = prox;
     return p;
