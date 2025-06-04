@@ -49,7 +49,6 @@ typedef struct ProductBox
     int cod_caixa;
     products_enum type;
     int tam;
-    // Lista de produtos da pilha
     ProductBoxItem *items_header;
     struct ProductBox *prox;
 } ProductBox;
@@ -65,7 +64,7 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
                  ProductBox **leash_stack_top_ref,
                  ProductBox **quilhas_stack_top_ref,
                  ProductBox **decks_antiderrapantes_stack_top_ref);
-void imprimir_lista_produtos(ProductLinkedList *lista);
+void imprimir_lista_produtos(ProductLinkedList *lista, char *tipo, float max, float min);
 void imprimir_pilha_de_caixas(ProductBox *pilha_topo, const char *nome_tipo_produto);
 void liberar_lista_produtos(ProductLinkedList *lista);
 void liberar_pilha_de_caixas(ProductBox **pilha_topo_ref);
@@ -174,8 +173,6 @@ void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tip
         printf("Erro ao alocar memoria para nova caixa de estoque");
         exit(1);
     }
-
-    // Seria bom colocar uma ligação? produto tal está na caixa de endereço tal
     novo_item->product_cod = cod_produto;
     novo_item->prox = caixa_do_topo->items_header;
     caixa_do_topo->items_header = novo_item;
@@ -275,8 +272,10 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
     return produtos_carregados;
 }
 
-void imprimir_lista_produtos(ProductLinkedList *lista)
+// Como C não tem suporte para parametros opcionais, iremos adicionar um parametro e se for NULL imprime tudo
+void imprimir_lista_produtos(ProductLinkedList *lista, char *tipo, float max, float min)
 {
+    int type_enum = tipo != NULL ? parse_type(tipo) : -1;
     printf("\n--- Lista de Produtos Disponiveis (Ordenada por Preco) ---\n");
     if (!lista->header)
     {
@@ -287,8 +286,17 @@ void imprimir_lista_produtos(ProductLinkedList *lista)
     int count = 1;
     while (atual != NULL)
     {
-        printf("  %d. COD: %d, TIPO: %d, DESC: %s, PRECO: %.2f\n",
-               count++, atual->cod, atual->type, atual->descricao, atual->preco);
+        // Se eu passar o tipo, só será verdadeiro se o tipo do atual for igual ao que eu passei
+        int passa_tipo = (type_enum == -1) || (atual->type == type_enum);
+        // Se eu passar o max, só será verdadeiro se o preco do atual for igual ao que eu passei
+        int passa_max = (max < 0) || (atual->preco <= max);
+        // Se eu passar o min, só será verdadeiro se o preco do atual for igual ao que eu passei
+        int passa_min = (min < 0) || (atual->preco >= min);
+        if (passa_tipo && passa_max && passa_min)
+        {
+            printf("  %d. COD: %d, TIPO: %d, DESC: %s, PRECO: %.2f\n",
+                   count++, atual->cod, atual->type, atual->descricao, atual->preco);
+        }
         atual = atual->prox;
     }
     printf("---------------------------------------------------------\n");
@@ -382,15 +390,11 @@ int main()
                                        &parafina_stack_top, &leash_stack_top,
                                        &quilhas_stack_top, &decks_antiderrapantes_stack_top);
 
-    // Caso o usuario queira colocar manualmente o item;
-    // adicionar_produto_na_lista(lista (ex: listaProdutos), cod_val, tipo_val, descricao_val, preco_val);
-
     if (total_carregado >= 0)
     {
         printf("Total de produtos carregados do CSV: %d\n", total_carregado);
 
-        imprimir_lista_produtos(&listaProdutos);
-
+        imprimir_lista_produtos(&listaProdutos, NULL, 200.0f, 100.0f);
         imprimir_pilha_de_caixas(parafina_stack_top, "Parafina");
         imprimir_pilha_de_caixas(leash_stack_top, "Leash");
         imprimir_pilha_de_caixas(quilhas_stack_top, "Quilhas");
