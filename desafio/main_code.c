@@ -4,6 +4,7 @@
 
 #define MAX_DESC 100 // Qnt max de caracteres em descricao
 
+// Tipos de produtos
 typedef enum
 {
     PARAFINA,
@@ -13,23 +14,26 @@ typedef enum
     NUM_PRODUCTS
 } products_enum;
 
-const int products_limits[NUM_PRODUCTS] = {
-    [PARAFINA] = 50,
-    [LEASH] = 25,
-    [QUILHAS] = 10,
-    [DECKS_ANTIDERRAPANTES] = 5};
+// Array com o nome dos produtos
+const char *products_names[NUM_PRODUCTS] = {"Parafina", "Leash", "Quilhas", "Decks Antiderrapantes"};
 
+// Array com os limites de cada produto
+const int products_limits[NUM_PRODUCTS] = {[PARAFINA] = 50, [LEASH] = 25, [QUILHAS] = 10, [DECKS_ANTIDERRAPANTES] = 5};
+
+// Lista duplamente encadeada de produtos
 typedef struct Product
 {
     int cod;
     products_enum type;
     char descricao[MAX_DESC];
     float preco;
+    int cod_caixa;
 
     struct Product *prox;
     struct Product *ant;
 } Product;
 
+// STRUCT - LinkedList
 typedef struct
 {
     Product *header;
@@ -37,6 +41,7 @@ typedef struct
     int tamanho;
 } ProductLinkedList;
 
+// Lista encadeada dos produtos da caixa
 typedef struct ProductBoxItem
 {
     int product_cod;
@@ -44,6 +49,7 @@ typedef struct ProductBoxItem
     struct ProductBoxItem *prox;
 } ProductBoxItem;
 
+// STRUCT - Caixa
 typedef struct ProductBox
 {
     int cod_caixa;
@@ -54,22 +60,21 @@ typedef struct ProductBox
     struct ProductBox *prox;
 } ProductBox;
 
+// Variavel para criar o cod da caixa iniciando de 1
 int g_next_box_code = 1;
 
+// Declaração das funções
 products_enum parse_type(const char *str);
-Product *adicionar_produto_na_lista(ProductLinkedList *lista, int cod, products_enum tipo, const char *desc, float preco);
+Product *adicionar_produto_na_lista(ProductLinkedList *lista, ProductBox **caixas[], int cod, products_enum tipo, const char *desc, float preco);
 void inserir_ordenado(ProductLinkedList *lista, Product *novo);
-void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tipo_produto, int cod_produto);
-int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
-                 ProductBox **parafina_stack_top_ref,
-                 ProductBox **leash_stack_top_ref,
-                 ProductBox **quilhas_stack_top_ref,
-                 ProductBox **decks_antiderrapantes_stack_top_ref);
+void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tipo_produto, int cod_produto, Product *produto);
+int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista, ProductBox **pilhas[NUM_PRODUCTS]);
 void imprimir_lista_produtos(ProductLinkedList *lista);
 void imprimir_pilha_de_caixas(ProductBox *pilha_topo, const char *nome_tipo_produto);
 void liberar_lista_produtos(ProductLinkedList *lista);
 void liberar_pilha_de_caixas(ProductBox **pilha_topo_ref);
 
+// Função para retonar o enum dado uma STRING
 products_enum parse_type(const char *str)
 {
     if (strcmp(str, "PARAFINA") == 0)
@@ -84,6 +89,7 @@ products_enum parse_type(const char *str)
     return (products_enum)-1; // Retorna um valor inválido para indicar erro
 }
 
+// Função para inserir o produto na LINKED LIST ordenadamente
 void inserir_ordenado(ProductLinkedList *lista, Product *novo)
 {
     Product *atual_node;
@@ -128,7 +134,8 @@ void inserir_ordenado(ProductLinkedList *lista, Product *novo)
     }
 }
 
-Product *adicionar_produto_na_lista(ProductLinkedList *lista, int cod, products_enum tipo, const char *desc, float preco)
+// Função para criar o produto - CHAMA: inserir_ordenado e adicionar_produto_ao_estoque
+Product *adicionar_produto_na_lista(ProductLinkedList *lista, ProductBox **caixas[], int cod, products_enum tipo, const char *desc, float preco)
 {
     Product *novo = malloc(sizeof(Product));
     if (!novo)
@@ -142,11 +149,13 @@ Product *adicionar_produto_na_lista(ProductLinkedList *lista, int cod, products_
     novo->descricao[MAX_DESC - 1] = '\0';
     novo->preco = preco;
     inserir_ordenado(lista, novo);
+    adicionar_produto_ao_estoque(caixas[tipo], tipo, cod, novo);
     lista->tamanho++;
     return novo;
 }
 
-void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tipo_produto, int cod_produto)
+// Adiciona o produto na caixa e modifica o endereço do topo da pilha
+void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tipo_produto, int cod_produto, Product *produto)
 {
     ProductBox *caixa_do_topo = *pilha_topo_ref;
     if (caixa_do_topo == NULL || caixa_do_topo->tam >= products_limits[tipo_produto])
@@ -180,13 +189,11 @@ void adicionar_produto_ao_estoque(ProductBox **pilha_topo_ref, products_enum tip
     novo_item->prox = caixa_do_topo->items_header;
     caixa_do_topo->items_header = novo_item;
     caixa_do_topo->tam++;
+    produto->cod_caixa = caixa_do_topo->cod_caixa;
 }
 
-int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
-                 ProductBox **parafina_stack_top_ref,
-                 ProductBox **leash_stack_top_ref,
-                 ProductBox **quilhas_stack_top_ref,
-                 ProductBox **decks_antiderrapantes_stack_top_ref)
+// Logica de importação via CSV
+int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista, ProductBox **pilhas[NUM_PRODUCTS])
 {
 
     FILE *arquivo = fopen(nome_arquivo, "r");
@@ -228,7 +235,7 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
         tipo_val = parse_type(token);
         if (tipo_val == (products_enum)-1)
         {
-            fprintf(stderr, "AVISO: Produto com codigo %d ignorado devido a tipo invalido.\n", cod_val);
+            printf("AVISO: Produto com codigo %d ignorado devido a tipo invalido.\n", cod_val);
             continue;
         }
 
@@ -245,36 +252,15 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
             continue;
         preco_val = atof(token);
 
-        Product *produto_adicionado = adicionar_produto_na_lista(lista, cod_val, tipo_val, descricao_val, preco_val);
-
-        if (produto_adicionado)
-        {
-            produtos_carregados++;
-            switch (tipo_val)
-            {
-            case PARAFINA:
-                adicionar_produto_ao_estoque(parafina_stack_top_ref, tipo_val, produto_adicionado->cod);
-                break;
-            case LEASH:
-                adicionar_produto_ao_estoque(leash_stack_top_ref, tipo_val, produto_adicionado->cod);
-                break;
-            case QUILHAS:
-                adicionar_produto_ao_estoque(quilhas_stack_top_ref, tipo_val, produto_adicionado->cod);
-                break;
-            case DECKS_ANTIDERRAPANTES:
-                adicionar_produto_ao_estoque(decks_antiderrapantes_stack_top_ref, tipo_val, produto_adicionado->cod);
-                break;
-            default:
-                printf("ERRO INTERNO: Tipo de produto inesperado %d\n", tipo_val);
-                break;
-            }
-        }
+        adicionar_produto_na_lista(lista, pilhas, cod_val, tipo_val, descricao_val, preco_val);
+        produtos_carregados++;
     }
 
     fclose(arquivo);
     return produtos_carregados;
 }
 
+// Função para imprimir a lista de produtos
 void imprimir_lista_produtos(ProductLinkedList *lista)
 {
     printf("\n--- Lista de Produtos Disponiveis (Ordenada por Preco) ---\n");
@@ -287,13 +273,14 @@ void imprimir_lista_produtos(ProductLinkedList *lista)
     int count = 1;
     while (atual != NULL)
     {
-        printf("  %d. COD: %d, TIPO: %d, DESC: %s, PRECO: %.2f\n",
-               count++, atual->cod, atual->type, atual->descricao, atual->preco);
+        printf("  %d. COD: %d, CAIXA: %d, TIPO: %s, DESC: %s, PRECO: %.2f\n",
+               count++, atual->cod, atual->cod_caixa, products_names[atual->type], atual->descricao, atual->preco);
         atual = atual->prox;
     }
     printf("---------------------------------------------------------\n");
 }
 
+// Função para imprimir a pilha de caixas
 void imprimir_pilha_de_caixas(ProductBox *pilha_topo, const char *nome_tipo_produto)
 {
     printf("\n--- Caixas de %s (Pilha de Estoque) ---\n", nome_tipo_produto);
@@ -308,8 +295,8 @@ void imprimir_pilha_de_caixas(ProductBox *pilha_topo, const char *nome_tipo_prod
     int num_caixa_impressao = 1;
     while (caixa_atual != NULL)
     {
-        printf("  Caixa #%d (Codigo Real: %d, Tipo Enum: %d) [%d/%d itens]:\n",
-               num_caixa_impressao++, caixa_atual->cod_caixa, caixa_atual->type,
+        printf("  Caixa #%d (Codigo Real: %d, Tipo: %s) [%d/%d itens]:\n",
+               num_caixa_impressao++, caixa_atual->cod_caixa, products_names[caixa_atual->type],
                caixa_atual->tam, products_limits[caixa_atual->type]);
 
         ProductBoxItem *item_atual = caixa_atual->items_header;
@@ -331,6 +318,7 @@ void imprimir_pilha_de_caixas(ProductBox *pilha_topo, const char *nome_tipo_prod
     printf("---------------------------------------------------------\n");
 }
 
+// Função para liberar os produtos
 void liberar_lista_produtos(ProductLinkedList *lista)
 {
     Product *atual = lista->header;
@@ -346,6 +334,7 @@ void liberar_lista_produtos(ProductLinkedList *lista)
     lista->tamanho = 0;
 }
 
+// Função para liberar os caixas
 void liberar_pilha_de_caixas(ProductBox **pilha_topo_ref)
 {
     ProductBox *caixa_atual = *pilha_topo_ref;
@@ -369,43 +358,36 @@ void liberar_pilha_de_caixas(ProductBox **pilha_topo_ref)
     *pilha_topo_ref = NULL;
 }
 
+ProductBox *parafina_stack_top = NULL, *leash_stack_top = NULL, *quilhas_stack_top = NULL, *decks_antiderrapantes_stack_top = NULL;
+ProductBox **pilhas[NUM_PRODUCTS] = {[PARAFINA] = &parafina_stack_top, [QUILHAS] = &quilhas_stack_top, [LEASH] = &leash_stack_top, [DECKS_ANTIDERRAPANTES] = &decks_antiderrapantes_stack_top};
+
 int main()
 {
     ProductLinkedList listaProdutos = {NULL, NULL, 0};
 
-    ProductBox *parafina_stack_top = NULL;
-    ProductBox *leash_stack_top = NULL;
-    ProductBox *quilhas_stack_top = NULL;
-    ProductBox *decks_antiderrapantes_stack_top = NULL;
+    int total_carregado = carregar_csv("products.csv", &listaProdutos, pilhas);
 
-    int total_carregado = carregar_csv("products.csv", &listaProdutos,
-                                       &parafina_stack_top, &leash_stack_top,
-                                       &quilhas_stack_top, &decks_antiderrapantes_stack_top);
-
-    // Caso o usuario queira colocar manualmente o item;
-    // adicionar_produto_na_lista(lista (ex: listaProdutos), cod_val, tipo_val, descricao_val, preco_val);
+    // Caso o usuario queira colocar manualmente o item
+    adicionar_produto_na_lista(&listaProdutos, pilhas, 23444, 0, "TESTANDO", 0.01f);
 
     if (total_carregado >= 0)
     {
         printf("Total de produtos carregados do CSV: %d\n", total_carregado);
-
         imprimir_lista_produtos(&listaProdutos);
-
-        imprimir_pilha_de_caixas(parafina_stack_top, "Parafina");
-        imprimir_pilha_de_caixas(leash_stack_top, "Leash");
-        imprimir_pilha_de_caixas(quilhas_stack_top, "Quilhas");
-        imprimir_pilha_de_caixas(decks_antiderrapantes_stack_top, "Decks Antiderrapantes");
+        for (int i = 0; i < NUM_PRODUCTS; i++)
+        {
+            imprimir_pilha_de_caixas(*pilhas[i], products_names[i]);
+        }
     }
     else
     {
         printf("Falha ao carregar produtos do arquivo CSV.\n");
     }
-
     liberar_lista_produtos(&listaProdutos);
-    liberar_pilha_de_caixas(&parafina_stack_top);
-    liberar_pilha_de_caixas(&leash_stack_top);
-    liberar_pilha_de_caixas(&quilhas_stack_top);
-    liberar_pilha_de_caixas(&decks_antiderrapantes_stack_top);
+    for (int i = 0; i < NUM_PRODUCTS; i++)
+    {
+        liberar_pilha_de_caixas(pilhas[i]);
+    }
 
     printf("\nMemoria liberada. Programa encerrado.\n");
 
