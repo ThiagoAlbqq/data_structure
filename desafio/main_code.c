@@ -55,7 +55,7 @@ typedef struct ProductBox {
   struct ProductBox *prox;
 } ProductBox;
 
-// Variavel para criar o cod da caixa iniciando de 1
+// Variavel para criar o cod da caixa (iniciando de 1)
 int g_next_box_code = 1;
 
 // Declaração das funções
@@ -91,6 +91,9 @@ products_enum parse_type(const char *str) {
 
 // Função para inserir o produto na lista de forma ordenada por preço
 // (crescente)
+// De inicio fiz algo ruim (estava percorrendo do inicio até o final, sendo que
+// se o valor do final fosse menor do que o do que eu estou criando, eu poderia
+// só chamar o adicionar no final)
 void inserir_ordenado(ProductLinkedList *lista, Product *novo) {
   Product *atual_node;
 
@@ -101,28 +104,26 @@ void inserir_ordenado(ProductLinkedList *lista, Product *novo) {
     // Lista vazia
     lista->header = novo;
     lista->tail = novo;
+  } else if (lista->header->preco > novo->preco) {
+    // Inserção no início da lista
+    novo->prox = lista->header;
+    lista->header->ant = novo;
+    lista->header = novo;
+  } else if (lista->tail->preco <= novo->preco) {
+    // Inserção no final da lista
+    novo->ant = lista->tail;
+    lista->tail->prox = novo;
+    lista->tail = novo;
   } else {
     atual_node = lista->header;
     while (atual_node != NULL && novo->preco >= atual_node->preco) {
       atual_node = atual_node->prox;
     }
-    if (atual_node == NULL) {
-      // Inserção no final da lista
-      novo->ant = lista->tail;
-      lista->tail->prox = novo;
-      lista->tail = novo;
-    } else if (atual_node->ant == NULL) {
-      // Inserção no início da lista
-      novo->prox = lista->header;
-      lista->header->ant = novo;
-      lista->header = novo;
-    } else {
-      // Inserção no meio da lista
-      novo->prox = atual_node;
-      novo->ant = atual_node->ant;
-      atual_node->ant->prox = novo;
-      atual_node->ant = novo;
-    }
+    // Inserção no meio da lista
+    novo->prox = atual_node;
+    novo->ant = atual_node->ant;
+    atual_node->ant->prox = novo;
+    atual_node->ant = novo;
   }
 }
 
@@ -131,6 +132,7 @@ Product *adicionar_produto_na_lista(ProductLinkedList *lista,
                                     products_enum tipo, const char *desc,
                                     float preco) {
   Product *novo = malloc(sizeof(Product));
+  // Apenas um caso de boas praticas
   if (!novo) {
     printf("Erro ao alocar memoria para produto na lista");
     exit(1);
@@ -140,8 +142,12 @@ Product *adicionar_produto_na_lista(ProductLinkedList *lista,
   strncpy(novo->descricao, desc, MAX_DESC - 1);
   novo->descricao[MAX_DESC - 1] = '\0';
   novo->preco = preco;
+
+  // A ideia aqui é chamr o inserir_ordenado e modificar a lista inserindo o
+  // novo
   inserir_ordenado(lista, novo);
 
+  // Modificar a pilha com o novo produto (e já cria uma caixa se precisar)
   pilhas[tipo] = adicionar_produto_ao_estoque(pilhas[tipo], tipo, cod, novo);
 
   lista->tamanho++;
@@ -184,6 +190,7 @@ ProductBox *adicionar_produto_ao_estoque(ProductBox *pilha_topo,
   return pilha_topo;
 }
 
+// Chegada dos 100 produtos via CSV (arquivo externo)
 int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
                  ProductBox *pilhas[]) {
   FILE *arquivo = fopen(nome_arquivo, "r");
@@ -349,6 +356,8 @@ int main() {
     printf("Falha ao carregar produtos do arquivo CSV.\n");
   }
 
+  // Já que criei as pilhas e as listas usando MALLOC (manualmente) devo
+  // libera-las manualmente também
   liberar_lista_produtos(&listaProdutos);
   for (int i = 0; i < NUM_PRODUCTS; i++) {
     pilhas[i] = liberar_pilha_de_caixas(pilhas[i]);
