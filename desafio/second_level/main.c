@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_DESC 100 // Qnt max de caracteres em descricao
+#define MAX_DESC 100
 
-// Tipos de produtos
 typedef enum {
   PARAFINA,
   LEASH,
@@ -13,15 +12,12 @@ typedef enum {
   NUM_PRODUCTS
 } products_enum;
 
-// Array com o nome dos produtos
 const char *products_names[NUM_PRODUCTS] = {"PARAFINA", "LEASH", "QUILHAS",
                                             "DECKS_ANTIDERRAPANTES"};
 
-// Array com os limites de cada produto
 const int products_limits[NUM_PRODUCTS] = {
     [PARAFINA] = 50, [LEASH] = 25, [QUILHAS] = 10, [DECKS_ANTIDERRAPANTES] = 5};
 
-// Lista duplamente encadeada de produtos
 typedef struct Product {
   int cod;
   products_enum type;
@@ -33,20 +29,17 @@ typedef struct Product {
   struct Product *ant;
 } Product;
 
-// STRUCT - LinkedList
 typedef struct {
   Product *header;
   Product *tail;
   int tamanho;
 } ProductLinkedList;
 
-// Lista encadeada dos produtos da caixa
 typedef struct ProductBoxItem {
   int product_cod;
   struct ProductBoxItem *prox;
 } ProductBoxItem;
 
-// STRUCT - Caixa
 typedef struct ProductBox {
   int cod_caixa;
   products_enum type;
@@ -55,10 +48,8 @@ typedef struct ProductBox {
   struct ProductBox *prox;
 } ProductBox;
 
-// Variavel para criar o cod da caixa iniciando de 1
 int g_next_box_code = 1;
 
-// Declaração das funções
 products_enum parse_type(const char *str);
 Product *adicionar_produto_na_lista(ProductLinkedList *lista,
                                     ProductBox *pilhas[], int cod,
@@ -76,8 +67,15 @@ void imprimir_pilha_de_caixas(ProductBox *pilha_topo,
                               const char *nome_tipo_produto);
 void liberar_lista_produtos(ProductLinkedList *lista);
 ProductBox *liberar_pilha_de_caixas(ProductBox *pilha_topo);
-Product *comprar_produto(ProductLinkedList *lista, ProductBox **pilha,
-                         int cod_produto);
+Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
+                     int cod_produto);
+Product *search_product(ProductLinkedList *list, int cod_produto);
+
+void push_box(ProductBox **head, ProductBox *new_box);
+ProductBox *pop_box(ProductBox **head);
+ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code);
+void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove);
+
 
 products_enum parse_type(const char *str) {
   if (strcmp(str, "PARAFINA") == 0)
@@ -88,12 +86,9 @@ products_enum parse_type(const char *str) {
     return QUILHAS;
   if (strcmp(str, "DECKS_ANTIDERRAPANTES") == 0)
     return DECKS_ANTIDERRAPANTES;
-  printf("AVISO: Tipo de produto desconhecido '%s'\n", str);
   return (products_enum)-1;
 }
 
-// Função para inserir o produto na lista de forma ordenada por preço
-// (crescente)
 void inserir_ordenado(ProductLinkedList *lista, Product *novo) {
   Product *atual_node;
 
@@ -101,7 +96,6 @@ void inserir_ordenado(ProductLinkedList *lista, Product *novo) {
   novo->ant = NULL;
 
   if (lista->header == NULL) {
-    // Lista vazia
     lista->header = novo;
     lista->tail = novo;
   } else {
@@ -110,17 +104,14 @@ void inserir_ordenado(ProductLinkedList *lista, Product *novo) {
       atual_node = atual_node->prox;
     }
     if (atual_node == NULL) {
-      // Inserção no final da lista
       novo->ant = lista->tail;
       lista->tail->prox = novo;
       lista->tail = novo;
     } else if (atual_node->ant == NULL) {
-      // Inserção no início da lista
       novo->prox = lista->header;
       lista->header->ant = novo;
       lista->header = novo;
     } else {
-      // Inserção no meio da lista
       novo->prox = atual_node;
       novo->ant = atual_node->ant;
       atual_node->ant->prox = novo;
@@ -143,6 +134,8 @@ Product *adicionar_produto_na_lista(ProductLinkedList *lista,
   strncpy(novo->descricao, desc, MAX_DESC - 1);
   novo->descricao[MAX_DESC - 1] = '\0';
   novo->preco = preco;
+  novo->cod_caixa = -1;
+
   inserir_ordenado(lista, novo);
 
   pilhas[tipo] = adicionar_produto_ao_estoque(pilhas[tipo], tipo, cod, novo);
@@ -155,8 +148,6 @@ ProductBox *adicionar_produto_ao_estoque(ProductBox *pilha_topo,
                                          products_enum tipo_produto,
                                          int cod_produto, Product *produto) {
   if (pilha_topo == NULL || pilha_topo->tam >= products_limits[tipo_produto]) {
-    // Caso a pilha esteja vazia ou a caixa no topo esteja cheia, cria nova
-    // caixa
     ProductBox *nova_caixa = malloc(sizeof(ProductBox));
     if (!nova_caixa) {
       printf("Erro ao alocar memoria para nova caixa de estoque");
@@ -174,7 +165,7 @@ ProductBox *adicionar_produto_ao_estoque(ProductBox *pilha_topo,
 
   ProductBoxItem *novo_item = malloc(sizeof(ProductBoxItem));
   if (!novo_item) {
-    printf("Erro ao alocar memoria para nova caixa de estoque");
+    printf("Erro ao alocar memoria para novo item na caixa");
     exit(1);
   }
 
@@ -222,8 +213,6 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
       continue;
     tipo_val = parse_type(token);
     if (tipo_val == (products_enum)-1) {
-      printf("AVISO: Produto com codigo %d ignorado devido a tipo invalido.\n",
-             cod_val);
       continue;
     }
 
@@ -250,27 +239,20 @@ int carregar_csv(const char *nome_arquivo, ProductLinkedList *lista,
 void imprimir_lista_produtos(ProductLinkedList *lista, char *tipo, float max,
                              float min) {
   int type_enum = tipo != NULL ? parse_type(tipo) : -1;
-  printf("\n--- Lista de Produtos Disponiveis (Ordenada por Preco) ---\n");
+  printf("\n--- Lista de Produtos Disponíveis (Ordenada por Preço) ---\n");
   if (!lista->header) {
-    // Caso lista esteja vazia
     printf("   Nenhum produto na lista.\n");
     return;
   }
   Product *atual = lista->header;
   int count = 1;
   while (atual != NULL) {
-    // Se eu passar o tipo, só será verdadeiro se o tipo do atual for igual ao
-    // que eu passei
     int passa_tipo = (type_enum == -1) || (atual->type == type_enum);
-    // Se eu passar o max, só será verdadeiro se o preco do atual for igual ao
-    // que eu passei
     int passa_max = (max < 0) || (atual->preco <= max);
-    // Se eu passar o min, só será verdadeiro se o preco do atual for igual ao
-    // que eu passei
     int passa_min = (min < 0) || (atual->preco >= min);
     if (passa_tipo && passa_max && passa_min) {
-      printf("  %d. COD: %d, TIPO: %d, DESC: %s, PRECO: %.2f\n", count++,
-             atual->cod, atual->type, atual->descricao, atual->preco);
+      printf("  %d. COD: %d, TIPO: %s, DESC: %s, PRECO: %.2f (Caixa: %d)\n", count++,
+             atual->cod, products_names[atual->type], atual->descricao, atual->preco, atual->cod_caixa);
     }
     atual = atual->prox;
   }
@@ -289,14 +271,13 @@ void imprimir_pilha_de_caixas(ProductBox *pilha_topo,
   ProductBox *caixa_atual = pilha_topo;
   int num_caixa_impressao = 1;
   while (caixa_atual != NULL) {
-    printf("   Caixa #%d (Codigo Real: %d, Tipo: %s) [%d/%d itens]:\n",
+    printf("   Caixa #%d (Código Real: %d, Tipo: %s) [%d/%d itens]:\n",
            num_caixa_impressao++, caixa_atual->cod_caixa,
            products_names[caixa_atual->type], caixa_atual->tam,
            products_limits[caixa_atual->type]);
 
     ProductBoxItem *item_atual = caixa_atual->items_header;
     if (!item_atual) {
-      // Caixa está vazia
       printf("     -> Caixa vazia.\n");
     } else {
       int item_count = 1;
@@ -369,25 +350,6 @@ ProductBox *pop_box(ProductBox **head) {
   popped_box->prox = NULL;
   return popped_box;
 }
-ProductBoxItem *remove_first_item_from_box(ProductBox *box) {
-  if (box == NULL || box->items_header == NULL) {
-    return NULL;
-  }
-  ProductBoxItem *first_item = box->items_header;
-  box->items_header = first_item->prox;
-  first_item->prox = NULL;
-  box->tam--;
-  return first_item;
-}
-
-void add_item_to_box_front(ProductBox *box, ProductBoxItem *new_item) {
-  if (box == NULL || new_item == NULL) {
-    return;
-  }
-  new_item->prox = box->items_header;
-  box->items_header = new_item;
-  box->tam++;
-}
 
 ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code) {
   if (box == NULL || box->items_header == NULL) {
@@ -414,94 +376,142 @@ ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code) {
   return NULL;
 }
 
-ProductBoxItem *
-find_and_remove_product_from_stack(ProductLinkedList *list,
-                                   ProductBox **product_stack_head,
-                                   int product_code, int target_box_code) {
-  ProductBox *temp_visited_boxes = NULL;
-  ProductBoxItem *removed_item = NULL;
-  ProductBoxItem *rebalance_item = NULL;
-  ProductBox *found_box = NULL;
-
-  while (*product_stack_head != NULL) {
-    ProductBox *current_box = pop_box(product_stack_head);
-
-    if (current_box->cod_caixa == target_box_code) {
-      removed_item = remove_item_from_box(current_box, product_code);
-      found_box = current_box;
-      break;
-    } else {
-
-      push_box(&temp_visited_boxes, current_box);
+void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove) {
+    if (lista == NULL || product_to_remove == NULL) {
+        return;
     }
-  }
 
-  while (temp_visited_boxes->prox != NULL) {
-    ProductBox *box_to_repush = pop_box(&temp_visited_boxes);
-    push_box(product_stack_head, box_to_repush);
-  }
+    if (product_to_remove->ant == NULL) {
+        lista->header = product_to_remove->prox;
+    } else {
+        product_to_remove->ant->prox = product_to_remove->prox;
+    }
 
-  rebalance_item = remove_first_item_from_box(temp_visited_boxes);
-  add_item_to_box_front(found_box, rebalance_item);
+    if (product_to_remove->prox == NULL) {
+        lista->tail = product_to_remove->ant;
+    } else {
+        product_to_remove->prox->ant = product_to_remove->ant;
+    }
 
-  Product *item = search_product(list, rebalance_item->product_cod);
-  item->cod_caixa = found_box->cod_caixa;
-
-  if (found_box != NULL) {
-    push_box(product_stack_head, found_box);
-  }
-
-  if (temp_visited_boxes->tam > 0) {
-    ProductBox *box_to_repush = pop_box(&temp_visited_boxes);
-    push_box(product_stack_head, box_to_repush);
-  } else
-    free(temp_visited_boxes);
-
-  return removed_item;
+    free(product_to_remove);
+    lista->tamanho--;
 }
 
-Product *buy_product(ProductLinkedList *list, ProductBox *pilhas[],
+
+Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
                      int cod_produto) {
-  Product *product_purchased = search_product(list, cod_produto);
-  if (product_purchased == NULL) {
+  Product *product_to_buy = search_product(lista, cod_produto);
+  if (product_to_buy == NULL) {
     printf("Erro: Produto %d não encontrado na lista geral.\n", cod_produto);
     return NULL;
   }
 
-  ProductBox **product_stack_ptr = &pilhas[product_purchased->type];
-  find_and_remove_product_from_stack(list, product_stack_ptr, cod_produto,
-                                     product_purchased->cod_caixa);
+  ProductBox **product_stack_head = &pilhas[product_to_buy->type];
+  ProductBox *temp_stack = NULL;
+  ProductBox *found_box = NULL;
+  ProductBoxItem *removed_box_item = NULL;
 
-  return product_purchased;
+  while (*product_stack_head != NULL) {
+    ProductBox *current_box = pop_box(product_stack_head);
+    if (current_box->cod_caixa == product_to_buy->cod_caixa) {
+      removed_box_item = remove_item_from_box(current_box, cod_produto);
+      if (removed_box_item != NULL) {
+        found_box = current_box;
+        break;
+      } else {
+        push_box(&temp_stack, current_box);
+      }
+    } else {
+      push_box(&temp_stack, current_box);
+    }
+  }
+
+  while (temp_stack != NULL) {
+    push_box(product_stack_head, pop_box(&temp_stack));
+  }
+
+  if (found_box != NULL) {
+    if (found_box->tam == 0) {
+        free(found_box);
+    } else {
+        push_box(product_stack_head, found_box);
+    }
+  } else {
+      if (removed_box_item) free(removed_box_item);
+      return NULL;
+  }
+
+  if (removed_box_item != NULL) {
+    free(removed_box_item);
+    remove_product_from_list(lista, product_to_buy);
+    return product_to_buy;
+  } else {
+    return NULL;
+  }
 }
 
 int main() {
   ProductLinkedList listaProdutos = {NULL, NULL, 0};
   ProductBox *pilhas[NUM_PRODUCTS] = {NULL};
+  int opcao;
+  int cod_produto_comprar;
+  char nome_arquivo[50];
+  int total_carregado = 0;
 
-  int total_carregado = carregar_csv("products.csv", &listaProdutos, pilhas);
+  do {
+    printf("\n--- MENU ---\n");
+    printf("1. Carregar produtos do CSV\n");
+    printf("2. Imprimir lista de produtos\n");
+    printf("3. Imprimir pilhas de caixas\n");
+    printf("4. Comprar produto\n");
+    printf("0. Sair\n");
+    printf("Escolha uma opção: ");
+    scanf("%d", &opcao);
 
-  adicionar_produto_na_lista(&listaProdutos, pilhas, 23444, PARAFINA,
-                             "TESTANDO MANUAL", 0.01f);
-
-  buy_product(&listaProdutos, pilhas, 25);
-
-  if (total_carregado >= 0) {
-    printf("Total de produtos carregados do CSV: %d\n", total_carregado);
-    imprimir_lista_produtos(&listaProdutos, NULL, 200.0f, 150.0f);
-    for (int i = 0; i < NUM_PRODUCTS; i++) {
-      imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
+    switch (opcao) {
+      case 1:
+        printf("Digite o nome do arquivo CSV (ex: products.csv): ");
+        scanf("%s", nome_arquivo);
+        total_carregado = carregar_csv(nome_arquivo, &listaProdutos, pilhas);
+        if (total_carregado >= 0) {
+          printf("Total de produtos carregados do CSV: %d\n", total_carregado);
+        } else {
+          printf("Falha ao carregar produtos do arquivo CSV.\n");
+        }
+        break;
+      case 2:
+        imprimir_lista_produtos(&listaProdutos, NULL, -1.0f, -1.0f);
+        break;
+      case 3:
+        for (int i = 0; i < NUM_PRODUCTS; i++) {
+          imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
+        }
+        break;
+      case 4:
+        printf("Digite o código do produto a ser comprado: ");
+        scanf("%d", &cod_produto_comprar);
+        Product *purchased = buy_product(&listaProdutos, pilhas, cod_produto_comprar);
+        if (purchased) {
+            printf("Compra do produto COD %d (%s) realizada com sucesso!\n", cod_produto_comprar, "Produto Removido");
+        } else {
+            printf("Falha na compra do produto COD %d.\n", cod_produto_comprar);
+        }
+        break;
+      case 0:
+        printf("Saindo do programa...\n");
+        break;
+      default:
+        printf("Opção inválida. Tente novamente.\n");
+        break;
     }
-  } else {
-    printf("Falha ao carregar produtos do arquivo CSV.\n");
-  }
+  } while (opcao != 0);
 
   liberar_lista_produtos(&listaProdutos);
   for (int i = 0; i < NUM_PRODUCTS; i++) {
     pilhas[i] = liberar_pilha_de_caixas(pilhas[i]);
   }
 
-  printf("\nMemoria liberada. Programa encerrado.\n");
+  printf("\nMemória liberada. Programa encerrado.\n");
 
   return 0;
 }
