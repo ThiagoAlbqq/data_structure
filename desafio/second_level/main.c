@@ -75,9 +75,9 @@ Product *search_product(ProductLinkedList *list, int cod_produto);
 void push_box(ProductBox **head, ProductBox *new_box);
 ProductBox *pop_box(ProductBox **head);
 ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code);
-void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove);
+void remove_product_from_list(ProductLinkedList *lista,
+                              Product *product_to_remove);
 void handle_imprimir_lista_produtos(ProductLinkedList *lista);
-
 
 products_enum parse_type(const char *str) {
   if (strcmp(str, "PARAFINA") == 0)
@@ -253,8 +253,9 @@ void imprimir_lista_produtos(ProductLinkedList *lista, char *tipo, float max,
     int passa_max = (max < 0) || (atual->preco <= max);
     int passa_min = (min < 0) || (atual->preco >= min);
     if (passa_tipo && passa_max && passa_min) {
-      printf("  %d. COD: %d, TIPO: %s, DESC: %s, PRECO: %.2f (Caixa: %d)\n", count++,
-             atual->cod, products_names[atual->type], atual->descricao, atual->preco, atual->cod_caixa);
+      printf("  %d. COD: %d, TIPO: %s, DESC: %s, PRECO: %.2f (Caixa: %d)\n",
+             count++, atual->cod, products_names[atual->type], atual->descricao,
+             atual->preco, atual->cod_caixa);
     }
     atual = atual->prox;
   }
@@ -378,25 +379,26 @@ ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code) {
   return NULL;
 }
 
-void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove) {
-    if (lista == NULL || product_to_remove == NULL) {
-        return;
-    }
+void remove_product_from_list(ProductLinkedList *lista,
+                              Product *product_to_remove) {
+  if (lista == NULL || product_to_remove == NULL) {
+    return;
+  }
 
-    if (product_to_remove->ant == NULL) {
-        lista->header = product_to_remove->prox;
-    } else {
-        product_to_remove->ant->prox = product_to_remove->prox;
-    }
+  if (product_to_remove->ant == NULL) {
+    lista->header = product_to_remove->prox;
+  } else {
+    product_to_remove->ant->prox = product_to_remove->prox;
+  }
 
-    if (product_to_remove->prox == NULL) {
-        lista->tail = product_to_remove->ant;
-    } else {
-        product_to_remove->prox->ant = product_to_remove->ant;
-    }
+  if (product_to_remove->prox == NULL) {
+    lista->tail = product_to_remove->ant;
+  } else {
+    product_to_remove->prox->ant = product_to_remove->ant;
+  }
 
-    free(product_to_remove);
-    lista->tamanho--;
+  free(product_to_remove);
+  lista->tamanho--;
 }
 
 Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
@@ -447,13 +449,14 @@ Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
 
   if (found_box != NULL) {
     if (found_box->tam == 0) {
-        free(found_box);
+      free(found_box);
     } else {
-        push_box(product_stack_head, found_box);
+      push_box(product_stack_head, found_box);
     }
   } else {
-      if (removed_box_item) free(removed_box_item);
-      return NULL;
+    if (removed_box_item)
+      free(removed_box_item);
+    return NULL;
   }
 
   if (temp_stack->tam == 0) {
@@ -465,9 +468,9 @@ Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
   if (removed_box_item != NULL) {
     Product *purchased_copy = malloc(sizeof(Product));
     if (purchased_copy == NULL) {
-        printf("Erro: Memória insuficiente para copiar o produto comprado.\n");
-        free(removed_box_item);
-        return NULL;
+      printf("Erro: Memória insuficiente para copiar o produto comprado.\n");
+      free(removed_box_item);
+      return NULL;
     }
 
     purchased_copy->cod = product_to_buy->cod;
@@ -495,7 +498,8 @@ products_enum get_product_type_from_menu() {
   printf("0. Todos os Tipos (ou Voltar)\n");
   printf("Escolha uma opção: ");
   scanf("%d", &choice);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   if (choice > 0 && choice <= NUM_PRODUCTS) {
     return (products_enum)(choice - 1);
@@ -508,63 +512,93 @@ products_enum get_product_type_from_menu() {
 }
 
 void handle_imprimir_lista_produtos(ProductLinkedList *lista) {
-    float max_preco = -1.0f;
-    float min_preco = -1.0f;
-    int escolha_filtro;
-    char *tipo_para_imprimir = NULL;
+  float max_preco = -1.0f;
+  float min_preco = -1.0f;
+  int escolha_filtro;
+  char *tipo_para_imprimir = NULL;
 
-    printf("\nOpções de filtro para a lista de produtos:\n");
-    printf("1. Imprimir todos os produtos\n");
-    printf("2. Filtrar por tipo\n");
-    printf("3. Filtrar por preço máximo\n");
-    printf("4. Filtrar por preço mínimo\n");
-    printf("5. Filtrar por tipo e preço (máx/min)\n");
-    printf("Escolha uma opção de filtro: ");
-    scanf("%d", &escolha_filtro);
-    while (getchar() != '\n' && !feof(stdin));
+  printf("\nOpções de filtro para a lista de produtos:\n");
+  printf("1. Imprimir todos os produtos\n");
+  printf("2. Filtrar por tipo\n");
+  printf("3. Filtrar por tipo e máximo\n");
+  printf("4. Filtrar por tipo e mínimo\n");
+  printf("5. Filtrar por preço máximo\n");
+  printf("6. Filtrar por preço mínimo\n");
+  printf("7. Filtrar por tipo e preço (máx/min)\n");
+  printf("Escolha uma opção de filtro: ");
+  scanf("%d", &escolha_filtro);
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
-    switch (escolha_filtro) {
-        case 1:
-            break;
-        case 2: {
-            products_enum selected_type = get_product_type_from_menu();
-            if (selected_type != (products_enum)-1) {
-                tipo_para_imprimir = (char*)products_names[selected_type];
-            }
-            break;
-        }
-        case 3:
-            printf("Digite o preço MÁXIMO: ");
-            scanf("%f", &max_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        case 4:
-            printf("Digite o preço MÍNIMO: ");
-            scanf("%f", &min_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        case 5: {
-            products_enum selected_type = get_product_type_from_menu();
-            if (selected_type != (products_enum)-1) {
-                tipo_para_imprimir = (char*)products_names[selected_type];
-            }
-            printf("Digite o preço MÁXIMO: ");
-            scanf("%f", &max_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            printf("Digite o preço MÍNIMO: ");
-            scanf("%f", &min_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        }
-        default:
-            printf("Opção de filtro inválida. Imprimindo todos os produtos.\n");
-            break;
+  switch (escolha_filtro) {
+  case 1:
+    break;
+  case 2: {
+    products_enum selected_type = get_product_type_from_menu();
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
     }
+    break;
+  }
+  case 3: {
+    products_enum selected_type = get_product_type_from_menu();
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    break;
+  }
+  case 4: {
+    products_enum selected_type = get_product_type_from_menu();
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    break;
+  }
+  case 5:
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  case 6:
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  case 7: {
+    products_enum selected_type = get_product_type_from_menu();
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  }
+  default:
+    printf("Opção de filtro inválida. Imprimindo todos os produtos.\n");
+    break;
+  }
 
-    imprimir_lista_produtos(lista, tipo_para_imprimir, max_preco, min_preco);
+  imprimir_lista_produtos(lista, tipo_para_imprimir, max_preco, min_preco);
 }
 
-void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[]) {
+void adicionar_produto_manualmente(ProductLinkedList *lista,
+                                   ProductBox *pilhas[]) {
   int cod;
   products_enum type;
   char descricao[MAX_DESC];
@@ -575,7 +609,8 @@ void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[
 
   printf("Digite o codigo do produto: ");
   scanf("%d", &cod);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   if (search_product(lista, cod) != NULL) {
     printf("Erro: Produto com codigo %d ja existe na lista.\n", cod);
@@ -594,10 +629,12 @@ void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[
 
   printf("Digite o preco do produto: ");
   scanf("%f", &preco);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   adicionar_produto_na_lista(lista, pilhas, cod, type, descricao, preco);
-  printf("Produto COD %d (%s) adicionado com sucesso!\n", cod, products_names[type]);
+  printf("Produto COD %d (%s) adicionado com sucesso!\n", cod,
+         products_names[type]);
 }
 
 int main() {
@@ -620,43 +657,45 @@ int main() {
     scanf("%d", &opcao);
 
     switch (opcao) {
-      case 1:
-        printf("Digite o nome do arquivo CSV (ex: products.csv): ");
-        scanf("%s", nome_arquivo);
-        total_carregado = carregar_csv(nome_arquivo, &listaProdutos, pilhas);
-        if (total_carregado >= 0) {
-          printf("Total de produtos carregados do CSV: %d\n", total_carregado);
-        } else {
-          printf("Falha ao carregar produtos do arquivo CSV.\n");
-        }
-        break;
-      case 2:
-        adicionar_produto_manualmente(&listaProdutos, pilhas);
-        break;
-      case 3:
-        handle_imprimir_lista_produtos(&listaProdutos);
-        break;
-      case 4:
-        for (int i = 0; i < NUM_PRODUCTS; i++) {
-          imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
-        }
-        break;
-      case 5:
-        printf("Digite o código do produto a ser comprado: ");
-        scanf("%d", &cod_produto_comprar);
-        Product *purchased = buy_product(&listaProdutos, pilhas, cod_produto_comprar);
-        if (purchased) {
-            printf("Compra do produto COD %d (%s) realizada com sucesso!\n", cod_produto_comprar, "Produto Removido");
-        } else {
-            printf("Falha na compra do produto COD %d.\n", cod_produto_comprar);
-        }
-        break;
-      case 0:
-        printf("Saindo do programa...\n");
-        break;
-      default:
-        printf("Opção inválida. Tente novamente.\n");
-        break;
+    case 1:
+      printf("Digite o nome do arquivo CSV (ex: products.csv): ");
+      scanf("%s", nome_arquivo);
+      total_carregado = carregar_csv(nome_arquivo, &listaProdutos, pilhas);
+      if (total_carregado >= 0) {
+        printf("Total de produtos carregados do CSV: %d\n", total_carregado);
+      } else {
+        printf("Falha ao carregar produtos do arquivo CSV.\n");
+      }
+      break;
+    case 2:
+      adicionar_produto_manualmente(&listaProdutos, pilhas);
+      break;
+    case 3:
+      handle_imprimir_lista_produtos(&listaProdutos);
+      break;
+    case 4:
+      for (int i = 0; i < NUM_PRODUCTS; i++) {
+        imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
+      }
+      break;
+    case 5:
+      printf("Digite o código do produto a ser comprado: ");
+      scanf("%d", &cod_produto_comprar);
+      Product *purchased =
+          buy_product(&listaProdutos, pilhas, cod_produto_comprar);
+      if (purchased) {
+        printf("Compra do produto COD %d (%s) realizada com sucesso!\n",
+               cod_produto_comprar, "Produto Removido");
+      } else {
+        printf("Falha na compra do produto COD %d.\n", cod_produto_comprar);
+      }
+      break;
+    case 0:
+      printf("Saindo do programa...\n");
+      break;
+    default:
+      printf("Opção inválida. Tente novamente.\n");
+      break;
     }
   } while (opcao != 0);
 

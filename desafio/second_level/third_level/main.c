@@ -1,7 +1,7 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #define MAX_DESC 100
 
@@ -99,16 +99,24 @@ Product *search_product(ProductLinkedList *list, int cod_produto);
 void push_box(ProductBox **head, ProductBox *new_box);
 ProductBox *pop_box(ProductBox **head);
 ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code);
-void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove);
+void remove_product_from_list(ProductLinkedList *lista,
+                              Product *product_to_remove);
 
-ProductQueueDelivery *constuctor_product_queue(char *nome, int cpf, int cep, char *nomeRua, int numCasa, char *complemento, int cod, products_enum type, char *descricao, float preco);
-ProductQueueDelivery *adicionar_na_lista_de_entregas(QueueDelivery* queue, Product *product_purchased);
-void remover_na_lista_de_entregas(QueueDelivery* queue);
+ProductQueueDelivery *constuctor_product_queue(char *nome, int cpf, int cep,
+                                               char *nomeRua, int numCasa,
+                                               char *complemento, int cod,
+                                               products_enum type,
+                                               char *descricao, float preco);
+ProductQueueDelivery *
+adicionar_na_lista_de_entregas(QueueDelivery *queue,
+                               Product *product_purchased);
+void remover_na_lista_de_entregas(QueueDelivery *queue);
 void liberar_fila_entregas(QueueDelivery *queue);
-void imprimir_fila_entregas(QueueDelivery* queue);
+void imprimir_fila_entregas(QueueDelivery *queue);
 void handle_imprimir_lista_produtos(ProductLinkedList *lista);
 products_enum get_product_type_from_menu();
-void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[]);
+void adicionar_produto_manualmente(ProductLinkedList *lista,
+                                   ProductBox *pilhas[]);
 
 products_enum parse_type(const char *str) {
   if (strcmp(str, "PARAFINA") == 0)
@@ -284,8 +292,9 @@ void imprimir_lista_produtos(ProductLinkedList *lista, char *tipo, float max,
     int passa_max = (max < 0) || (atual->preco <= max);
     int passa_min = (min < 0) || (atual->preco >= min);
     if (passa_tipo && passa_max && passa_min) {
-      printf("  %d. COD: %d, TIPO: %s, DESC: %s, PRECO: %.2f (Caixa: %d)\n", count++,
-             atual->cod, products_names[atual->type], atual->descricao, atual->preco, atual->cod_caixa);
+      printf("  %d. COD: %d, TIPO: %s, DESC: %s, PRECO: %.2f (Caixa: %d)\n",
+             count++, atual->cod, products_names[atual->type], atual->descricao,
+             atual->preco, atual->cod_caixa);
     }
     atual = atual->prox;
   }
@@ -410,27 +419,27 @@ ProductBoxItem *remove_item_from_box(ProductBox *box, int product_code) {
   return NULL;
 }
 
-void remove_product_from_list(ProductLinkedList *lista, Product *product_to_remove) {
-    if (lista == NULL || product_to_remove == NULL) {
-        return;
-    }
+void remove_product_from_list(ProductLinkedList *lista,
+                              Product *product_to_remove) {
+  if (lista == NULL || product_to_remove == NULL) {
+    return;
+  }
 
-    if (product_to_remove->ant == NULL) {
-        lista->header = product_to_remove->prox;
-    } else {
-        product_to_remove->ant->prox = product_to_remove->prox;
-    }
+  if (product_to_remove->ant == NULL) {
+    lista->header = product_to_remove->prox;
+  } else {
+    product_to_remove->ant->prox = product_to_remove->prox;
+  }
 
-    if (product_to_remove->prox == NULL) {
-        lista->tail = product_to_remove->ant;
-    } else {
-        product_to_remove->prox->ant = product_to_remove->ant;
-    }
+  if (product_to_remove->prox == NULL) {
+    lista->tail = product_to_remove->ant;
+  } else {
+    product_to_remove->prox->ant = product_to_remove->ant;
+  }
 
-    free(product_to_remove);
-    lista->tamanho--;
+  free(product_to_remove);
+  lista->tamanho--;
 }
-
 
 Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
                      int cod_produto) {
@@ -480,13 +489,14 @@ Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
 
   if (found_box != NULL) {
     if (found_box->tam == 0) {
-        free(found_box);
+      free(found_box);
     } else {
-        push_box(product_stack_head, found_box);
+      push_box(product_stack_head, found_box);
     }
   } else {
-      if (removed_box_item) free(removed_box_item);
-      return NULL;
+    if (removed_box_item)
+      free(removed_box_item);
+    return NULL;
   }
 
   if (temp_stack->tam == 0) {
@@ -498,9 +508,9 @@ Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
   if (removed_box_item != NULL) {
     Product *purchased_copy = malloc(sizeof(Product));
     if (purchased_copy == NULL) {
-        printf("Erro: Memória insuficiente para copiar o produto comprado.\n");
-        free(removed_box_item);
-        return NULL;
+      printf("Erro: Memória insuficiente para copiar o produto comprado.\n");
+      free(removed_box_item);
+      return NULL;
     }
 
     purchased_copy->cod = product_to_buy->cod;
@@ -519,9 +529,14 @@ Product *buy_product(ProductLinkedList *lista, ProductBox *pilhas[],
   }
 }
 
-ProductQueueDelivery *constuctor_product_queue(char *nome, int cpf, int cep, char *nomeRua, int numCasa, char *complemento, int cod, products_enum type, char *descricao, float preco) {
-  ProductQueueDelivery * p = malloc(sizeof(ProductQueueDelivery));
-  if (!p) return NULL;
+ProductQueueDelivery *constuctor_product_queue(char *nome, int cpf, int cep,
+                                               char *nomeRua, int numCasa,
+                                               char *complemento, int cod,
+                                               products_enum type,
+                                               char *descricao, float preco) {
+  ProductQueueDelivery *p = malloc(sizeof(ProductQueueDelivery));
+  if (!p)
+    return NULL;
 
   p->prox = NULL;
 
@@ -571,7 +586,9 @@ ProductQueueDelivery *constuctor_product_queue(char *nome, int cpf, int cep, cha
   return p;
 }
 
-ProductQueueDelivery *adicionar_na_lista_de_entregas(QueueDelivery* queue, Product *product_purchased) {
+ProductQueueDelivery *
+adicionar_na_lista_de_entregas(QueueDelivery *queue,
+                               Product *product_purchased) {
   int cep, cpf, numCasa;
   char nomeRua[100], complemento[100], nome[100];
 
@@ -583,13 +600,15 @@ ProductQueueDelivery *adicionar_na_lista_de_entregas(QueueDelivery* queue, Produ
 
   printf("Digite o cpf do comprador: ");
   scanf("%d", &cpf);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   printf("\n----------- Endereço -----------\n");
 
   printf("Digite o cep: ");
   scanf("%d", &cep);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   printf("Digite nome da rua: ");
   fgets(nomeRua, 100, stdin);
@@ -597,21 +616,22 @@ ProductQueueDelivery *adicionar_na_lista_de_entregas(QueueDelivery* queue, Produ
 
   printf("Digite o número da casa: ");
   scanf("%d", &numCasa);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   printf("Digite o complemento: ");
   fgets(complemento, 100, stdin);
   complemento[strcspn(complemento, "\n")] = '\0';
 
-  ProductQueueDelivery * pedido = constuctor_product_queue(
-      nome, cpf, cep, nomeRua, numCasa, complemento,
-      product_purchased->cod, product_purchased->type, product_purchased->descricao, product_purchased->preco
-  );
+  ProductQueueDelivery *pedido = constuctor_product_queue(
+      nome, cpf, cep, nomeRua, numCasa, complemento, product_purchased->cod,
+      product_purchased->type, product_purchased->descricao,
+      product_purchased->preco);
 
   if (pedido == NULL) {
-      printf("Erro ao criar pedido de entrega. Memória insuficiente.\n");
-      free(product_purchased);
-      return NULL;
+    printf("Erro ao criar pedido de entrega. Memória insuficiente.\n");
+    free(product_purchased);
+    return NULL;
   }
 
   if (queue->header == NULL) {
@@ -627,148 +647,186 @@ ProductQueueDelivery *adicionar_na_lista_de_entregas(QueueDelivery* queue, Produ
   return pedido;
 }
 
-void remover_na_lista_de_entregas(QueueDelivery* queue) {
-    if (queue == NULL || queue->header == NULL) {
-        printf("A fila de entregas está vazia.\n");
-        return;
-    }
+void remover_na_lista_de_entregas(QueueDelivery *queue) {
+  if (queue == NULL || queue->header == NULL) {
+    printf("A fila de entregas está vazia.\n");
+    return;
+  }
 
-    ProductQueueDelivery *removido = queue->header;
-    queue->header = removido->prox;
-    if (queue->header == NULL) {
-        queue->tail = NULL;
-    }
-    queue->tamanho--;
+  ProductQueueDelivery *removido = queue->header;
+  queue->header = removido->prox;
+  if (queue->header == NULL) {
+    queue->tail = NULL;
+  }
+  queue->tamanho--;
 
-    printf("\n--- Pedido de Entrega Processado e Removido ---\n");
-    printf("  Produto: COD %d, Tipo: %s, Descrição: %s, Preço: %.2f\n",
-           removido->cod, products_names[removido->type], removido->descricao, removido->preco);
-    printf("  Comprador: %s (CPF: %d)\n", removido->nome, removido->cpf);
-    printf("  Endereço: %s, %d, %s (CEP: %d)\n",
-           removido->nomeRua, removido->numCasa,
-           removido->complemento && strlen(removido->complemento) > 0 ? removido->complemento : "N/A",
-           removido->cep);
-    printf("--------------------------------------------------\n");
+  printf("\n--- Pedido de Entrega Processado e Removido ---\n");
+  printf("  Produto: COD %d, Tipo: %s, Descrição: %s, Preço: %.2f\n",
+         removido->cod, products_names[removido->type], removido->descricao,
+         removido->preco);
+  printf("  Comprador: %s (CPF: %d)\n", removido->nome, removido->cpf);
+  printf("  Endereço: %s, %d, %s (CEP: %d)\n", removido->nomeRua,
+         removido->numCasa,
+         removido->complemento && strlen(removido->complemento) > 0
+             ? removido->complemento
+             : "N/A",
+         removido->cep);
+  printf("--------------------------------------------------\n");
 
-    free(removido->nome);
-    free(removido->nomeRua);
-    free(removido->complemento);
-    free(removido->descricao);
-    free(removido);
+  free(removido->nome);
+  free(removido->nomeRua);
+  free(removido->complemento);
+  free(removido->descricao);
+  free(removido);
 }
 
-void imprimir_fila_entregas(QueueDelivery* queue) {
-    printf("\n--- Fila de Entregas Pendentes ---\n");
-    if (queue == NULL || queue->header == NULL) {
-        printf("   A fila de entregas está vazia.\n");
-        printf("-----------------------------------\n");
-        return;
-    }
-
-    ProductQueueDelivery *atual = queue->header;
-    int count = 1;
-    while (atual != NULL) {
-        printf("  %d. Pedido:\n", count++);
-        printf("     Produto: COD %d, Tipo: %s, Descrição: %s, Preço: %.2f\n",
-               atual->cod, products_names[atual->type], atual->descricao, atual->preco);
-        printf("     Comprador: %s (CPF: %d)\n", atual->nome, atual->cpf);
-        printf("     Endereço: %s, %d, %s (CEP: %d)\n",
-               atual->nomeRua, atual->numCasa,
-               atual->complemento && strlen(atual->complemento) > 0 ? atual->complemento : "N/A",
-               atual->cep);
-        printf("     ---\n");
-        atual = atual->prox;
-    }
+void imprimir_fila_entregas(QueueDelivery *queue) {
+  printf("\n--- Fila de Entregas Pendentes ---\n");
+  if (queue == NULL || queue->header == NULL) {
+    printf("   A fila de entregas está vazia.\n");
     printf("-----------------------------------\n");
+    return;
+  }
+
+  ProductQueueDelivery *atual = queue->header;
+  int count = 1;
+  while (atual != NULL) {
+    printf("  %d. Pedido:\n", count++);
+    printf("     Produto: COD %d, Tipo: %s, Descrição: %s, Preço: %.2f\n",
+           atual->cod, products_names[atual->type], atual->descricao,
+           atual->preco);
+    printf("     Comprador: %s (CPF: %d)\n", atual->nome, atual->cpf);
+    printf("     Endereço: %s, %d, %s (CEP: %d)\n", atual->nomeRua,
+           atual->numCasa,
+           atual->complemento && strlen(atual->complemento) > 0
+               ? atual->complemento
+               : "N/A",
+           atual->cep);
+    printf("     ---\n");
+    atual = atual->prox;
+  }
+  printf("-----------------------------------\n");
 }
 
 void liberar_fila_entregas(QueueDelivery *queue) {
-    if (queue == NULL) return;
-    while (queue->header != NULL) {
-        remover_na_lista_de_entregas(queue);
-    }
-    free(queue);
+  if (queue == NULL)
+    return;
+  while (queue->header != NULL) {
+    remover_na_lista_de_entregas(queue);
+  }
+  free(queue);
 }
 
 products_enum get_product_type_from_menu() {
-    int choice;
-    printf("\n--- Selecione o Tipo de Produto --- \n");
-    for (int i = 0; i < NUM_PRODUCTS; i++) {
-        printf("%d. %s\n", i + 1, products_names[i]);
-    }
-    printf("0. Todos os Tipos (ou Voltar)\n");
-    printf("Escolha uma opção: ");
-    scanf("%d", &choice);
-    while (getchar() != '\n' && !feof(stdin));
+  int choice;
+  printf("\n--- Selecione o Tipo de Produto --- \n");
+  for (int i = 0; i < NUM_PRODUCTS; i++) {
+    printf("%d. %s\n", i + 1, products_names[i]);
+  }
+  printf("0. Todos os Tipos (ou Voltar)\n");
+  printf("Escolha uma opção: ");
+  scanf("%d", &choice);
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
-    if (choice > 0 && choice <= NUM_PRODUCTS) {
-        return (products_enum)(choice - 1);
-    } else if (choice == 0) {
-        return (products_enum)-1;
-    } else {
-        printf("Opção inválida. Seleção de tipo ignorada.\n");
-        return (products_enum)-1;
-    }
+  if (choice > 0 && choice <= NUM_PRODUCTS) {
+    return (products_enum)(choice - 1);
+  } else if (choice == 0) {
+    return (products_enum)-1;
+  } else {
+    printf("Opção inválida. Seleção de tipo ignorada.\n");
+    return (products_enum)-1;
+  }
 }
 
 void handle_imprimir_lista_produtos(ProductLinkedList *lista) {
-    float max_preco = -1.0f;
-    float min_preco = -1.0f;
-    int escolha_filtro;
-    char *tipo_para_imprimir = NULL;
+  float max_preco = -1.0f;
+  float min_preco = -1.0f;
+  int escolha_filtro;
+  char *tipo_para_imprimir = NULL;
 
-    printf("\nOpções de filtro para a lista de produtos:\n");
-    printf("1. Imprimir todos os produtos\n");
-    printf("2. Filtrar por tipo\n");
-    printf("3. Filtrar por preço máximo\n");
-    printf("4. Filtrar por preço mínimo\n");
-    printf("5. Filtrar por tipo e preço (máx/min)\n");
-    printf("Escolha uma opção de filtro: ");
-    scanf("%d", &escolha_filtro);
-    while (getchar() != '\n' && !feof(stdin));
+  printf("\nOpções de filtro para a lista de produtos:\n");
+  printf("1. Imprimir todos os produtos\n");
+  printf("2. Filtrar por tipo\n");
+  printf("3. Filtrar por tipo e máximo\n");
+  printf("4. Filtrar por tipo e mínimo\n");
+  printf("5. Filtrar por preço máximo\n");
+  printf("6. Filtrar por preço mínimo\n");
+  printf("7. Filtrar por tipo e preço (máx/min)\n");
+  printf("Escolha uma opção de filtro: ");
+  scanf("%d", &escolha_filtro);
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
-    switch (escolha_filtro) {
-        case 1:
-            break;
-        case 2: {
-            products_enum selected_type = get_product_type_from_menu();
-            if (selected_type != (products_enum)-1) {
-                tipo_para_imprimir = (char*)products_names[selected_type];
-            }
-            break;
-        }
-        case 3:
-            printf("Digite o preço MÁXIMO: ");
-            scanf("%f", &max_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        case 4:
-            printf("Digite o preço MÍNIMO: ");
-            scanf("%f", &min_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        case 5: {
-            products_enum selected_type = get_product_type_from_menu();
-            if (selected_type != (products_enum)-1) {
-                tipo_para_imprimir = (char*)products_names[selected_type];
-            }
-            printf("Digite o preço MÁXIMO: ");
-            scanf("%f", &max_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            printf("Digite o preço MÍNIMO: ");
-            scanf("%f", &min_preco);
-            while (getchar() != '\n' && !feof(stdin));
-            break;
-        }
-        default:
-            printf("Opção de filtro inválida. Imprimindo todos os produtos.\n");
-            break;
+  switch (escolha_filtro) {
+  case 1:
+    break;
+  case 2: {
+    products_enum selected_type = get_product_type_from_menu();
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
     }
+    break;
+  }
+  case 3: {
+    products_enum selected_type = get_product_type_from_menu();
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    break;
+  }
+  case 4: {
+    products_enum selected_type = get_product_type_from_menu();
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    break;
+  }
+  case 5:
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  case 6:
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  case 7: {
+    products_enum selected_type = get_product_type_from_menu();
+    if (selected_type != (products_enum)-1) {
+      tipo_para_imprimir = (char *)products_names[selected_type];
+    }
+    printf("Digite o preço MÁXIMO: ");
+    scanf("%f", &max_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    printf("Digite o preço MÍNIMO: ");
+    scanf("%f", &min_preco);
+    while (getchar() != '\n' && !feof(stdin))
+      ;
+    break;
+  }
+  default:
+    printf("Opção de filtro inválida. Imprimindo todos os produtos.\n");
+    break;
+  }
 
-    imprimir_lista_produtos(lista, tipo_para_imprimir, max_preco, min_preco);
+  imprimir_lista_produtos(lista, tipo_para_imprimir, max_preco, min_preco);
 }
 
-void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[]) {
+void adicionar_produto_manualmente(ProductLinkedList *lista,
+                                   ProductBox *pilhas[]) {
   int cod;
   products_enum type;
   char descricao[MAX_DESC];
@@ -779,7 +837,8 @@ void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[
 
   printf("Digite o codigo do produto: ");
   scanf("%d", &cod);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   if (search_product(lista, cod) != NULL) {
     printf("Erro: Produto com codigo %d ja existe na lista.\n", cod);
@@ -798,10 +857,12 @@ void adicionar_produto_manualmente(ProductLinkedList *lista, ProductBox *pilhas[
 
   printf("Digite o preco do produto: ");
   scanf("%f", &preco);
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
   adicionar_produto_na_lista(lista, pilhas, cod, type, descricao, preco);
-  printf("Produto COD %d (%s) adicionado com sucesso!\n", cod, products_names[type]);
+  printf("Produto COD %d (%s) adicionado com sucesso!\n", cod,
+         products_names[type]);
 }
 
 int main() {
@@ -812,10 +873,10 @@ int main() {
   char nome_arquivo[50];
   int total_carregado = 0;
 
-  entregas = (QueueDelivery*) malloc(sizeof(QueueDelivery));
+  entregas = (QueueDelivery *)malloc(sizeof(QueueDelivery));
   if (entregas == NULL) {
-      printf("Erro ao alocar memoria para a fila de entregas.\n");
-      return 1;
+    printf("Erro ao alocar memoria para a fila de entregas.\n");
+    return 1;
   }
   entregas->header = NULL;
   entregas->tail = NULL;
@@ -835,60 +896,66 @@ int main() {
     scanf("%d", &opcao);
 
     switch (opcao) {
-      case 1:
-        printf("Digite o nome do arquivo CSV (ex: products.csv): ");
-        scanf("%s", nome_arquivo);
-        while (getchar() != '\n' && !feof(stdin));
-        total_carregado = carregar_csv(nome_arquivo, &listaProdutos, pilhas);
-        if (total_carregado >= 0) {
-          printf("Total de produtos carregados do CSV: %d\n", total_carregado);
-        } else {
-          printf("Falha ao carregar produtos do arquivo CSV.\n");
-        }
-        break;
-      case 2:
-        adicionar_produto_manualmente(&listaProdutos, pilhas);
-        break;
-      case 3:
-        handle_imprimir_lista_produtos(&listaProdutos);
-        break;
-      case 4:
-        for (int i = 0; i < NUM_PRODUCTS; i++) {
-          imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
-        }
-        break;
-      case 5: {
-        printf("Digite o codigo do produto a ser comprado: ");
-        scanf("%d", &cod_produto_comprar);
-        while (getchar() != '\n' && !feof(stdin));
-
-        Product *purchased_product_ptr = buy_product(&listaProdutos, pilhas, cod_produto_comprar);
-
-        if (purchased_product_ptr != NULL) {
-            ProductQueueDelivery *aux = adicionar_na_lista_de_entregas(entregas, purchased_product_ptr);
-            if (aux != NULL) {
-                printf("Compra do produto COD %d (%s) realizada com sucesso e adicionado a fila de entregas!\n",
-                       aux->cod, products_names[aux->type]);
-            } else {
-                printf("Erro: Nao foi possivel adicionar o produto a fila de entregas.\n");
-            }
-        } else {
-            printf("Falha na compra do produto COD %d.\n", cod_produto_comprar);
-        }
-        break;
+    case 1:
+      printf("Digite o nome do arquivo CSV (ex: products.csv): ");
+      scanf("%s", nome_arquivo);
+      while (getchar() != '\n' && !feof(stdin))
+        ;
+      total_carregado = carregar_csv(nome_arquivo, &listaProdutos, pilhas);
+      if (total_carregado >= 0) {
+        printf("Total de produtos carregados do CSV: %d\n", total_carregado);
+      } else {
+        printf("Falha ao carregar produtos do arquivo CSV.\n");
       }
-      case 6:
-        imprimir_fila_entregas(entregas);
-        break;
-      case 7:
-        remover_na_lista_de_entregas(entregas);
-        break;
-      case 0:
-        printf("Saindo do programa...\n");
-        break;
-      default:
-        printf("Opcao invalida. Tente novamente.\n");
-        break;
+      break;
+    case 2:
+      adicionar_produto_manualmente(&listaProdutos, pilhas);
+      break;
+    case 3:
+      handle_imprimir_lista_produtos(&listaProdutos);
+      break;
+    case 4:
+      for (int i = 0; i < NUM_PRODUCTS; i++) {
+        imprimir_pilha_de_caixas(pilhas[i], products_names[i]);
+      }
+      break;
+    case 5: {
+      printf("Digite o codigo do produto a ser comprado: ");
+      scanf("%d", &cod_produto_comprar);
+      while (getchar() != '\n' && !feof(stdin))
+        ;
+
+      Product *purchased_product_ptr =
+          buy_product(&listaProdutos, pilhas, cod_produto_comprar);
+
+      if (purchased_product_ptr != NULL) {
+        ProductQueueDelivery *aux =
+            adicionar_na_lista_de_entregas(entregas, purchased_product_ptr);
+        if (aux != NULL) {
+          printf("Compra do produto COD %d (%s) realizada com sucesso e "
+                 "adicionado a fila de entregas!\n",
+                 aux->cod, products_names[aux->type]);
+        } else {
+          printf("Erro: Nao foi possivel adicionar o produto a fila de "
+                 "entregas.\n");
+        }
+      } else {
+        printf("Falha na compra do produto COD %d.\n", cod_produto_comprar);
+      }
+      break;
+    }
+    case 6:
+      imprimir_fila_entregas(entregas);
+      break;
+    case 7:
+      remover_na_lista_de_entregas(entregas);
+      break;
+    case 0:
+      printf("Saindo do programa...\n");
+      break;
+    default:
+      printf("Opcao invalida. Tente novamente.\n");
+      break;
     }
   } while (opcao != 0);
 
