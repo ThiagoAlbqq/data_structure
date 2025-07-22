@@ -1,4 +1,5 @@
-#include "menu.h"
+#include "./interface/menu.h"
+#include "./repository/quarto.h"
 #include <stdio.h>
 
 int main() {
@@ -15,6 +16,7 @@ int main() {
       break;
     case 2:
       // Função de Buscar
+      get_rooms();
       break;
     case 3:
       // Função de Atualizar
