@@ -1,0 +1,2 @@
+101;1;quarto 101;quarto de casal;100.00
+102;2;quarto 102;quarto de casal duplo;200.00
